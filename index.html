@@ -182,6 +182,12 @@ const CircleOfFifths = () => {
     return cycleNotes.includes(note);
   };
   
+  // Función para obtener el número romano según la función armónica
+  const getDegreeIcon = (degree) => {
+    // Retornamos directamente el grado romano
+    return degree;
+  };
+  
   // Calcular posición de cada nota en el círculo
   const getNotePosition = (index, type) => {
     const angle = (index * 30 - 90) * (Math.PI / 180); // 30 grados por nota, comenzando arriba
@@ -192,13 +198,17 @@ const CircleOfFifths = () => {
   };
   
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-8">
-      <div className="bg-white rounded-2xl shadow-2xl p-8">
-        <h1 className="text-4xl font-bold text-center mb-6 text-slate-800">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 sm:p-8">
+      <div className="bg-white rounded-2xl shadow-2xl p-4 sm:p-8 w-full max-w-4xl">
+        <h1 className="text-2xl sm:text-4xl font-bold text-center mb-4 sm:mb-6 text-slate-800">
           Círculo de Quintas
         </h1>
         
-        <svg width="500" height="500" className="mb-6">
+        <div className="flex justify-center items-center overflow-x-auto">
+          <svg 
+            viewBox="-20 0 540 500" 
+            className="mb-6 w-full h-auto max-w-[540px]"
+          >
           {/* Círculos de fondo */}
           <circle cx="250" cy="250" r="200" fill="none" stroke="#d0d0d0" strokeWidth="2" />
           <circle cx="250" cy="250" r="180" fill="none" stroke="#d0d0d0" strokeWidth="1" strokeDasharray="5,5" />
@@ -270,6 +280,7 @@ const CircleOfFifths = () => {
             );
             const isPinned = note === pinnedNote && 'major' === pinnedType;
             const isColtrane = isInColtraneCycle(note, 'major');
+            const icon = degreeInfo ? getDegreeIcon(degreeInfo.degree) : '';
             
             return (
               <g key={`major-${note}`}>
@@ -312,6 +323,25 @@ const CircleOfFifths = () => {
                 >
                   {note}
                 </text>
+                {icon && isActive && (
+                  <text
+                    x={x + 20}
+                    y={y - 15}
+                    textAnchor="middle"
+                    fill="#333"
+                    fontSize="14"
+                    fontWeight="bold"
+                    stroke="white"
+                    strokeWidth="0.5"
+                    style={{
+                      pointerEvents: 'none',
+                      userSelect: 'none',
+                      paintOrder: 'stroke fill'
+                    }}
+                  >
+                    {icon}
+                  </text>
+                )}
               </g>
             );
           })}
@@ -328,6 +358,7 @@ const CircleOfFifths = () => {
             );
             const isPinned = note === pinnedNote && 'minor' === pinnedType;
             const isColtrane = isInColtraneCycle(note, 'minor');
+            const icon = degreeInfo ? getDegreeIcon(degreeInfo.degree) : '';
             
             return (
               <g key={`minor-${note}`}>
@@ -370,78 +401,98 @@ const CircleOfFifths = () => {
                 >
                   {note}
                 </text>
+                {icon && isActive && (
+                  <text
+                    x={x + 18}
+                    y={y - 12}
+                    textAnchor="middle"
+                    fill="#333"
+                    fontSize="12"
+                    fontWeight="bold"
+                    stroke="white"
+                    strokeWidth="0.5"
+                    style={{
+                      pointerEvents: 'none',
+                      userSelect: 'none',
+                      paintOrder: 'stroke fill'
+                    }}
+                  >
+                    {icon}
+                  </text>
+                )}
               </g>
             );
           })}
         </svg>
+        </div>
         
         {/* Botón para activar modo Coltrane */}
         <div className="flex justify-center mb-4">
           <button
             onClick={() => setColtraneMode(!coltraneMode)}
-            className={`px-4 py-2 rounded-lg font-medium transition-all ${
+            className={`px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-all ${
               coltraneMode 
                 ? 'bg-blue-600 text-white hover:bg-blue-700' 
                 : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
             }`}
           >
-            {coltraneMode ? '✓ Modo Coltrane Activo' : 'Activar Modo Coltrane'}
+            {coltraneMode ? '✓ Modo Coltrane' : 'Modo Coltrane'}
           </button>
         </div>
         
         {/* Leyenda */}
-        <div className="flex justify-center gap-3 mb-4 flex-wrap">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full border-2 border-gray-700" style={{backgroundColor: '#4a90e2'}}></div>
-            <span className="text-sm font-medium text-slate-700">I/i (Tónica)</span>
+        <div className="flex justify-center gap-2 sm:gap-3 mb-4 flex-wrap px-2">
+          <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            <div className="w-4 h-4 sm:w-6 sm:h-6 rounded-full border-2 border-gray-700" style={{backgroundColor: '#4a90e2'}}></div>
+            <span className="font-medium text-slate-700 whitespace-nowrap">I/i (Tónica)</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full border-2 border-gray-700" style={{backgroundColor: '#e74c3c'}}></div>
-            <span className="text-sm font-medium text-slate-700">V/v (Dominante)</span>
+          <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            <div className="w-4 h-4 sm:w-6 sm:h-6 rounded-full border-2 border-gray-700" style={{backgroundColor: '#e74c3c'}}></div>
+            <span className="font-medium text-slate-700 whitespace-nowrap">V/v (Dom)</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full border-2 border-gray-700" style={{backgroundColor: '#2ecc71'}}></div>
-            <span className="text-sm font-medium text-slate-700">IV/iv (Subdominante)</span>
+          <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            <div className="w-4 h-4 sm:w-6 sm:h-6 rounded-full border-2 border-gray-700" style={{backgroundColor: '#2ecc71'}}></div>
+            <span className="font-medium text-slate-700 whitespace-nowrap">IV/iv (Sub)</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full border-2 border-gray-700" style={{backgroundColor: '#f39c12'}}></div>
-            <span className="text-sm font-medium text-slate-700">ii/ii° (Supertónica)</span>
+          <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            <div className="w-4 h-4 sm:w-6 sm:h-6 rounded-full border-2 border-gray-700" style={{backgroundColor: '#f39c12'}}></div>
+            <span className="font-medium text-slate-700 whitespace-nowrap">ii/ii°</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full border-2 border-gray-700" style={{backgroundColor: '#3498db'}}></div>
-            <span className="text-sm font-medium text-slate-700">vi/VI (Superdominante)</span>
+          <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            <div className="w-4 h-4 sm:w-6 sm:h-6 rounded-full border-2 border-gray-700" style={{backgroundColor: '#3498db'}}></div>
+            <span className="font-medium text-slate-700 whitespace-nowrap">vi/VI</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full border-2 border-gray-700" style={{backgroundColor: '#e67e22'}}></div>
-            <span className="text-sm font-medium text-slate-700">iii/III (Mediante)</span>
+          <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            <div className="w-4 h-4 sm:w-6 sm:h-6 rounded-full border-2 border-gray-700" style={{backgroundColor: '#e67e22'}}></div>
+            <span className="font-medium text-slate-700 whitespace-nowrap">iii/III</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full border-2 border-gray-700" style={{backgroundColor: '#95a5a6'}}></div>
-            <span className="text-sm font-medium text-slate-700">vii°/VII (Sensible)</span>
+          <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            <div className="w-4 h-4 sm:w-6 sm:h-6 rounded-full border-2 border-gray-700" style={{backgroundColor: '#95a5a6'}}></div>
+            <span className="font-medium text-slate-700 whitespace-nowrap">vii°/VII</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full border-2 border-gray-700" style={{backgroundColor: '#9b59b6'}}></div>
-            <span className="text-sm font-medium text-slate-700">Relativa</span>
+          <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            <div className="w-4 h-4 sm:w-6 sm:h-6 rounded-full border-2 border-gray-700" style={{backgroundColor: '#9b59b6'}}></div>
+            <span className="font-medium text-slate-700 whitespace-nowrap">Rel</span>
           </div>
         </div>
         
         {/* Información dinámica */}
-        <div className="text-center bg-slate-50 rounded-lg p-6 min-h-[180px] flex items-center justify-center">
+        <div className="text-center bg-slate-50 rounded-lg p-4 sm:p-6 min-h-[160px] sm:min-h-[180px] flex items-center justify-center">
           {displayNote && displayType ? (
             <div className="w-full">
-              <p className="text-lg text-slate-700 mb-3">
+              <p className="text-base sm:text-lg text-slate-700 mb-2 sm:mb-3">
                 <span className="font-bold text-[#4a90e2]">{displayNote}</span> 
-                <span className="text-sm ml-2">
+                <span className="text-xs sm:text-sm ml-2">
                   ({displayType === 'major' ? 'Mayor' : 'Menor'})
                 </span> - Tónica ({displayType === 'major' ? 'I' : 'i'})
                 {pinnedNote && (
                   <span className="ml-2 text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded">
-                    Fijada (click para desfijar)
+                    Fijada
                   </span>
                 )}
               </p>
               
-              <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm text-slate-700 mb-3 max-w-xl mx-auto">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 sm:gap-x-6 gap-y-1 sm:gap-y-2 text-xs sm:text-sm text-slate-700 mb-2 sm:mb-3 max-w-xl mx-auto">
                 {getScaleNotesWithQualities(displayNote, displayType).map((item) => {
                   let colorClass = '';
                   let chordQuality = '';
@@ -497,9 +548,9 @@ const CircleOfFifths = () => {
       </div>
       
       {/* Información educativa */}
-      <div className="mt-8 max-w-2xl bg-white rounded-xl shadow-lg p-6">
-        <h2 className="text-2xl font-bold mb-4 text-slate-800">Grados de la Escala y Cualidades de los Acordes</h2>
-        <div className="space-y-3 text-slate-600">
+      <div className="mt-4 sm:mt-8 w-full max-w-4xl bg-white rounded-xl shadow-lg p-4 sm:p-6">
+        <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-slate-800">Grados de la Escala y Cualidades de los Acordes</h2>
+        <div className="space-y-2 sm:space-y-3 text-sm sm:text-base text-slate-600">
           <p>
             Cada grado de la escala tiene una cualidad específica (mayor, menor o disminuido) que se mantiene 
             consistente dentro de la tonalidad.
