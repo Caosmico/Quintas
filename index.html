@@ -21,7 +21,8 @@ const CircleOfFifths = () => {
   const [hoveredType, setHoveredType] = useState(null); // 'major' o 'minor'
   const [pinnedNote, setPinnedNote] = useState(null);
   const [pinnedType, setPinnedType] = useState(null);
-  const [coltraneMode, setColtraneMode] = useState(false);
+  const [visualMode, setVisualMode] = useState('functional'); // 'normal', 'functional', 'coltrane'
+  const [expandedSection, setExpandedSection] = useState('modes'); // 'modes', 'theory', null
   
   // Determinar qué nota mostrar (pinned tiene prioridad sobre hover)
   const displayNote = pinnedNote || hoveredNote;
@@ -78,6 +79,26 @@ const CircleOfFifths = () => {
     } else {
       return majorKeys[index];
     }
+  };
+  
+  // Función para obtener las 7 notas mayores de la escala en el círculo de quintas
+  // (nota seleccionada + 1 anterior + 5 siguientes)
+  const getMajorKeysInScale = (tonic, type) => {
+    // Si es menor, usar la relativa mayor como referencia
+    const referenceTonic = type === 'minor' ? getRelative(tonic, 'minor') : tonic;
+    const tonicIndex = getNoteIndex(referenceTonic, 'major');
+    
+    const scaleKeys = [];
+    // 1 nota anterior (F si tónica es C)
+    scaleKeys.push(majorKeys[(tonicIndex - 1 + majorKeys.length) % majorKeys.length]);
+    // La tónica
+    scaleKeys.push(majorKeys[tonicIndex]);
+    // 5 notas siguientes (G, D, A, E, B si tónica es C)
+    for (let i = 1; i <= 5; i++) {
+      scaleKeys.push(majorKeys[(tonicIndex + i) % majorKeys.length]);
+    }
+    
+    return scaleKeys;
   };
   
   // Función para obtener las notas del ciclo Coltrane (terceras mayores)
@@ -143,33 +164,70 @@ const CircleOfFifths = () => {
   const getNoteColor = (note, type) => {
     if (!displayNote) return type === 'major' ? '#e0e0e0' : '#d0d0d0';
     
-    // Nota seleccionada (tónica)
-    if (note === displayNote && type === displayType) return '#4a90e2';
-    
-    // Relativa menor/mayor
-    if (note === getRelative(displayNote, displayType)) {
-      if ((displayType === 'major' && type === 'minor') || 
-          (displayType === 'minor' && type === 'major')) {
-        return '#9b59b6'; // Púrpura para relativa
+    // En modo normal, iluminar las 7 notas mayores en el círculo de quintas
+    if (visualMode === 'normal') {
+      // Solo trabajamos con el círculo mayor
+      if (type === 'major') {
+        // Nota seleccionada (o su relativa mayor si seleccionó menor)
+        const referenceTonic = displayType === 'minor' ? getRelative(displayNote, 'minor') : displayNote;
+        if (note === referenceTonic) return '#4a90e2'; // Tónica en azul
+        
+        // Verificar si está en las 7 notas mayores de la escala
+        const scaleKeys = getMajorKeysInScale(displayNote, displayType);
+        if (scaleKeys.includes(note)) {
+          return '#90c890'; // Verde claro para notas de la escala
+        }
       }
+      
+      return type === 'major' ? '#e0e0e0' : '#d0d0d0';
     }
     
-    // Verificar si esta nota está en la escala del displayNote
-    const degreeInfo = getScaleDegreeInfo(note, displayNote, displayType);
+    // Modo funcional (actual) - colores por función armónica
+    if (visualMode === 'functional') {
+      // Nota seleccionada (tónica)
+      if (note === displayNote && type === displayType) return '#4a90e2';
+      
+      // Relativa menor/mayor
+      if (note === getRelative(displayNote, displayType)) {
+        if ((displayType === 'major' && type === 'minor') || 
+            (displayType === 'minor' && type === 'major')) {
+          return '#9b59b6';
+        }
+      }
+      
+      // Verificar si esta nota está en la escala del displayNote
+      const degreeInfo = getScaleDegreeInfo(note, displayNote, displayType);
+      
+      if (degreeInfo) {
+        const degree = degreeInfo.degree;
+        
+        // Acordes mayores
+        if (degree === 'I' || degree === 'i') return '#4a90e2';
+        if (degree === 'V' || degree === 'v') return '#e74c3c';
+        if (degree === 'IV' || degree === 'iv') return '#2ecc71';
+        
+        // Otros grados
+        if (degree === 'ii' || degree === 'ii°') return '#f39c12';
+        if (degree === 'vi' || degree === 'VI') return '#3498db';
+        if (degree === 'iii' || degree === 'III') return '#e67e22';
+        if (degree === 'vii°' || degree === 'VII') return '#95a5a6';
+      }
+      
+      return type === 'major' ? '#e0e0e0' : '#d0d0d0';
+    }
     
-    if (degreeInfo) {
-      const degree = degreeInfo.degree;
+    // Modo Coltrane - sin colores por función, solo destaca las notas de la escala
+    if (visualMode === 'coltrane') {
+      // Nota seleccionada (tónica)
+      if (note === displayNote && type === displayType) return '#4a90e2';
       
-      // Acordes mayores
-      if (degree === 'I' || degree === 'i') return '#4a90e2';
-      if (degree === 'V' || degree === 'v') return '#e74c3c';
-      if (degree === 'IV' || degree === 'iv') return '#2ecc71';
+      // Notas en la escala
+      const degreeInfo = getScaleDegreeInfo(note, displayNote, displayType);
+      if (degreeInfo) {
+        return '#b0b0b0'; // Color neutro para notas de la escala
+      }
       
-      // Otros grados
-      if (degree === 'ii' || degree === 'ii°') return '#f39c12';
-      if (degree === 'vi' || degree === 'VI') return '#3498db';
-      if (degree === 'iii' || degree === 'III') return '#e67e22';
-      if (degree === 'vii°' || degree === 'VII') return '#95a5a6';
+      return type === 'major' ? '#e0e0e0' : '#d0d0d0';
     }
     
     return type === 'major' ? '#e0e0e0' : '#d0d0d0';
@@ -177,7 +235,7 @@ const CircleOfFifths = () => {
   
   // Función para verificar si una nota está en el ciclo Coltrane
   const isInColtraneCycle = (note, type) => {
-    if (!coltraneMode || !displayNote || type !== displayType) return false;
+    if (visualMode !== 'coltrane' || !displayNote || type !== displayType) return false;
     const cycleNotes = getColtraneCycle(displayNote, displayType);
     return cycleNotes.includes(note);
   };
@@ -426,55 +484,77 @@ const CircleOfFifths = () => {
         </svg>
         </div>
         
-        {/* Botón para activar modo Coltrane */}
-        <div className="flex justify-center mb-4">
+        {/* Selector de modos de visualización */}
+        <div className="flex justify-center mb-4 gap-2">
           <button
-            onClick={() => setColtraneMode(!coltraneMode)}
-            className={`px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-all ${
-              coltraneMode 
-                ? 'bg-blue-600 text-white hover:bg-blue-700' 
+            onClick={() => setVisualMode('normal')}
+            className={`px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${
+              visualMode === 'normal'
+                ? 'bg-slate-600 text-white' 
                 : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
             }`}
           >
-            {coltraneMode ? '✓ Modo Coltrane' : 'Modo Coltrane'}
+            Normal
+          </button>
+          <button
+            onClick={() => setVisualMode('functional')}
+            className={`px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${
+              visualMode === 'functional'
+                ? 'bg-purple-600 text-white' 
+                : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+            }`}
+          >
+            Funcional
+          </button>
+          <button
+            onClick={() => setVisualMode('coltrane')}
+            className={`px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${
+              visualMode === 'coltrane'
+                ? 'bg-blue-600 text-white' 
+                : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+            }`}
+          >
+            Coltrane
           </button>
         </div>
         
-        {/* Leyenda */}
-        <div className="flex justify-center gap-2 sm:gap-3 mb-4 flex-wrap px-2">
-          <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
-            <div className="w-4 h-4 sm:w-6 sm:h-6 rounded-full border-2 border-gray-700" style={{backgroundColor: '#4a90e2'}}></div>
-            <span className="font-medium text-slate-700 whitespace-nowrap">I/i (Tónica)</span>
+        {/* Leyenda - solo en modo funcional */}
+        {visualMode === 'functional' && (
+          <div className="flex justify-center gap-2 sm:gap-3 mb-4 flex-wrap px-2">
+            <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <div className="w-4 h-4 sm:w-6 sm:h-6 rounded-full border-2 border-gray-700" style={{backgroundColor: '#4a90e2'}}></div>
+              <span className="font-medium text-slate-700 whitespace-nowrap">I/i (Tónica)</span>
+            </div>
+            <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <div className="w-4 h-4 sm:w-6 sm:h-6 rounded-full border-2 border-gray-700" style={{backgroundColor: '#e74c3c'}}></div>
+              <span className="font-medium text-slate-700 whitespace-nowrap">V/v (Dom)</span>
+            </div>
+            <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <div className="w-4 h-4 sm:w-6 sm:h-6 rounded-full border-2 border-gray-700" style={{backgroundColor: '#2ecc71'}}></div>
+              <span className="font-medium text-slate-700 whitespace-nowrap">IV/iv (Sub)</span>
+            </div>
+            <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <div className="w-4 h-4 sm:w-6 sm:h-6 rounded-full border-2 border-gray-700" style={{backgroundColor: '#f39c12'}}></div>
+              <span className="font-medium text-slate-700 whitespace-nowrap">ii/ii°</span>
+            </div>
+            <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <div className="w-4 h-4 sm:w-6 sm:h-6 rounded-full border-2 border-gray-700" style={{backgroundColor: '#3498db'}}></div>
+              <span className="font-medium text-slate-700 whitespace-nowrap">vi/VI</span>
+            </div>
+            <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <div className="w-4 h-4 sm:w-6 sm:h-6 rounded-full border-2 border-gray-700" style={{backgroundColor: '#e67e22'}}></div>
+              <span className="font-medium text-slate-700 whitespace-nowrap">iii/III</span>
+            </div>
+            <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <div className="w-4 h-4 sm:w-6 sm:h-6 rounded-full border-2 border-gray-700" style={{backgroundColor: '#95a5a6'}}></div>
+              <span className="font-medium text-slate-700 whitespace-nowrap">vii°/VII</span>
+            </div>
+            <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <div className="w-4 h-4 sm:w-6 sm:h-6 rounded-full border-2 border-gray-700" style={{backgroundColor: '#9b59b6'}}></div>
+              <span className="font-medium text-slate-700 whitespace-nowrap">Rel</span>
+            </div>
           </div>
-          <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
-            <div className="w-4 h-4 sm:w-6 sm:h-6 rounded-full border-2 border-gray-700" style={{backgroundColor: '#e74c3c'}}></div>
-            <span className="font-medium text-slate-700 whitespace-nowrap">V/v (Dom)</span>
-          </div>
-          <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
-            <div className="w-4 h-4 sm:w-6 sm:h-6 rounded-full border-2 border-gray-700" style={{backgroundColor: '#2ecc71'}}></div>
-            <span className="font-medium text-slate-700 whitespace-nowrap">IV/iv (Sub)</span>
-          </div>
-          <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
-            <div className="w-4 h-4 sm:w-6 sm:h-6 rounded-full border-2 border-gray-700" style={{backgroundColor: '#f39c12'}}></div>
-            <span className="font-medium text-slate-700 whitespace-nowrap">ii/ii°</span>
-          </div>
-          <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
-            <div className="w-4 h-4 sm:w-6 sm:h-6 rounded-full border-2 border-gray-700" style={{backgroundColor: '#3498db'}}></div>
-            <span className="font-medium text-slate-700 whitespace-nowrap">vi/VI</span>
-          </div>
-          <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
-            <div className="w-4 h-4 sm:w-6 sm:h-6 rounded-full border-2 border-gray-700" style={{backgroundColor: '#e67e22'}}></div>
-            <span className="font-medium text-slate-700 whitespace-nowrap">iii/III</span>
-          </div>
-          <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
-            <div className="w-4 h-4 sm:w-6 sm:h-6 rounded-full border-2 border-gray-700" style={{backgroundColor: '#95a5a6'}}></div>
-            <span className="font-medium text-slate-700 whitespace-nowrap">vii°/VII</span>
-          </div>
-          <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
-            <div className="w-4 h-4 sm:w-6 sm:h-6 rounded-full border-2 border-gray-700" style={{backgroundColor: '#9b59b6'}}></div>
-            <span className="font-medium text-slate-700 whitespace-nowrap">Rel</span>
-          </div>
-        </div>
+        )}
         
         {/* Información dinámica */}
         <div className="text-center bg-slate-50 rounded-lg p-4 sm:p-6 min-h-[160px] sm:min-h-[180px] flex items-center justify-center">
@@ -549,8 +629,94 @@ const CircleOfFifths = () => {
       
       {/* Información educativa */}
       <div className="mt-4 sm:mt-8 w-full max-w-4xl bg-white rounded-xl shadow-lg p-4 sm:p-6">
-        <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-slate-800">Grados de la Escala y Cualidades de los Acordes</h2>
-        <div className="space-y-2 sm:space-y-3 text-sm sm:text-base text-slate-600">
+        
+        {/* Sección: Modos de Visualización */}
+        <div className="mb-4">
+          <button
+            onClick={() => setExpandedSection(expandedSection === 'modes' ? null : 'modes')}
+            className="w-full flex justify-between items-center text-xl sm:text-2xl font-bold text-slate-800 hover:text-slate-600 transition-colors"
+          >
+            <span>Modos de Visualización</span>
+            <span className="text-2xl">{expandedSection === 'modes' ? '−' : '+'}</span>
+          </button>
+          
+          {expandedSection === 'modes' && (
+            <div className="space-y-2 sm:space-y-3 text-sm sm:text-base text-slate-600 mt-3">
+              <p>
+                La aplicación ofrece tres modos de visualización para explorar diferentes aspectos del círculo de quintas:
+              </p>
+              
+              <div className="bg-slate-100 p-4 rounded-lg mt-3">
+                <p className="font-bold mb-2 text-slate-800">🔘 Modo Normal:</p>
+                <p className="mb-2">
+                  Visualiza el patrón fundamental del <strong>círculo de quintas</strong>. Ilumina las 7 notas mayores 
+                  que forman la escala seleccionada siguiendo el patrón del círculo.
+                </p>
+                <p className="text-sm">
+                  <strong>Patrón:</strong> 1 nota anterior + tónica + 5 notas siguientes en el círculo de quintas.
+                </p>
+                <p className="text-sm mt-1">
+                  <strong>Ejemplo con C Mayor:</strong> F (anterior), C (tónica), G, D, A, E, B (siguientes).
+                </p>
+                <p className="text-sm mt-1 italic text-slate-500">
+                  💡 Si seleccionas una nota menor, se usa su relativa mayor como referencia.
+                </p>
+              </div>
+              
+              <div className="bg-purple-50 border-l-4 border-purple-500 p-4 rounded-lg">
+                <p className="font-bold mb-2 text-purple-900">🟣 Modo Funcional:</p>
+                <p className="mb-2">
+                  Muestra las <strong>funciones armónicas</strong> de cada grado de la escala con colores diferenciados 
+                  y números romanos. Ideal para estudiar progresiones y relaciones tonales.
+                </p>
+                <p className="text-sm">
+                  <strong>Colores por función:</strong> I/i (azul), V/v (rojo), IV/iv (verde), ii/ii° (naranja), etc.
+                </p>
+                <p className="text-sm mt-1">
+                  Incluye tanto acordes mayores como menores, mostrando la cualidad de cada grado (I mayúscula = mayor, 
+                  ii minúscula = menor, vii° = disminuido).
+                </p>
+                <p className="text-sm mt-2">
+                  <strong>Ejemplo con C Mayor:</strong> Los acordes son C (I), Dm (ii), Em (iii), F (IV), G (V), Am (vi), B° (vii°)
+                </p>
+                <p className="text-sm mt-1">
+                  <strong>Ejemplo con A menor:</strong> Los acordes son Am (i), B° (ii°), C (III), Dm (iv), Em (v), F (VI), G (VII)
+                </p>
+              </div>
+              
+              <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
+                <p className="font-bold mb-2 text-blue-900">🔵 Modo Coltrane:</p>
+                <p className="mb-2">
+                  Visualiza el <strong>ciclo de terceras mayores</strong>, técnica popularizada por John Coltrane 
+                  en "Giant Steps". Las notas del ciclo se marcan con borde azul.
+                </p>
+                <p className="text-sm">
+                  <strong>Patrón:</strong> Desde cualquier nota, las terceras mayores están separadas por 4 posiciones 
+                  en el círculo de quintas, formando un triángulo equilátero.
+                </p>
+                <p className="text-sm mt-1">
+                  <strong>Ejemplo desde C:</strong> C → E (tercera mayor) → A♭ (otra tercera mayor) → C
+                </p>
+                <p className="text-sm mt-1 italic text-slate-500">
+                  💡 Existen solo 4 ciclos posibles: C-E-A♭, D♭-F-A, D-F♯-B♭, E♭-G-B
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+        
+        {/* Sección: Teoría Musical */}
+        <div className="mb-4 border-t pt-4">
+          <button
+            onClick={() => setExpandedSection(expandedSection === 'theory' ? null : 'theory')}
+            className="w-full flex justify-between items-center text-xl sm:text-2xl font-bold text-slate-800 hover:text-slate-600 transition-colors"
+          >
+            <span>Teoría Musical y Progresiones</span>
+            <span className="text-2xl">{expandedSection === 'theory' ? '−' : '+'}</span>
+          </button>
+          
+          {expandedSection === 'theory' && (
+            <div className="space-y-2 sm:space-y-3 text-sm sm:text-base text-slate-600 mt-3">
           <p>
             Cada grado de la escala tiene una cualidad específica (mayor, menor o disminuido) que se mantiene 
             consistente dentro de la tonalidad.
@@ -611,38 +777,13 @@ const CircleOfFifths = () => {
           </div>
           
           <p className="mt-4">
-            <strong>Ejemplo con C Mayor:</strong> Los acordes son C (I), Dm (ii), Em (iii), F (IV), G (V), Am (vi), B° (vii°)
-          </p>
-          
-          <p className="mt-2">
             <strong>Nota importante:</strong> El acorde vii° (sensible) es disminuido. En C Mayor es B° (B disminuido), 
             que se muestra en el círculo interior junto con los otros acordes menores, aunque técnicamente es disminuido, no menor.
           </p>
-          
-          <p className="mt-2">
-            <strong>Ejemplo con A menor:</strong> Los acordes son Am (i), B° (ii°), C (III), Dm (iv), Em (v), F (VI), G (VII)
-          </p>
-          
-          <div className="bg-purple-50 border-l-4 border-purple-500 p-4 rounded-lg mt-4">
-            <p className="font-bold mb-2 text-purple-900">Modo Coltrane - Ciclo de Terceras Mayores:</p>
-            <p className="text-purple-800">
-              El "Modo Coltrane" muestra el ciclo de terceras mayores, una técnica de improvisación 
-              popularizada por John Coltrane en composiciones como "Giant Steps". 
-            </p>
-            <p className="text-purple-800 mt-2">
-              En el círculo de quintas, las terceras mayores forman un triángulo equilátero. 
-              Por ejemplo, desde C: E (tercera mayor) y A♭ (otra tercera mayor desde E) forman 
-              este patrón geométrico.
-            </p>
-            <p className="text-purple-800 mt-2">
-              <strong>Ejemplo desde C:</strong> C → E → A♭ → C (cada paso es una tercera mayor, 4 semitonos)
-            </p>
-            <p className="text-purple-700 mt-2 text-sm italic">
-              💡 Activa el Modo Coltrane y selecciona una nota para ver su ciclo de terceras mayores 
-              marcado con borde azul.
-            </p>
-          </div>
+            </div>
+          )}
         </div>
+        
       </div>
     </div>
   );
